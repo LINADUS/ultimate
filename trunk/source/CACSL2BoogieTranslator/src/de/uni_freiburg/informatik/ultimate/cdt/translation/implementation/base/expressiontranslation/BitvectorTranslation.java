@@ -668,7 +668,20 @@ public class BitvectorTranslation extends ExpressionTranslation {
 		if (resultType.isSmtFloat()) {
 			// operand is BV, result is SMT
 			// 1. convert operand to SMT, 2. perform conversion
+			
 			final CPrimitive smtOperandCType = ((CPrimitive) operandType).getSmtVariant();
+			
+			if (operand.getStatements().size() == 1) {
+				final Statement statement = operand.getStatements().get(0);
+				if (statement instanceof CallStatement) {
+					final CallStatement call = (CallStatement) statement;
+					if (call.getMethodName().contains("float_to_bitvec") && call.getArguments().length == 1) {
+						final Expression inner = call.getArguments()[0];
+						final RValue innerSmt = new RValue(inner, smtOperandCType);
+						return convertFloatToSmtFloat(loc, new ExpressionResultBuilder().setLrValue(innerSmt).build(), resultType);
+					}
+				}
+			}
 			final RValue smtOperandRValue = new RValue(
 					transformBitvectorToFloat(loc, operand.getLrValue().getValue(), smtOperandCType.getType()),
 					smtOperandCType);
